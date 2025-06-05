@@ -5,7 +5,7 @@ import axios from 'axios';
 import MapZoomToFeature from './components/MapZoomToFeature';
 import MapResetter from './components/MapResetter';
 import FixMapResize from './components/FixMapResize';
-import MapPointer from './components/MapPointer';
+// import MapPointer from './components/MapPointer';
 
 function Carte() {
   const [regionsData, setRegionsData] = useState(null);
@@ -15,16 +15,39 @@ function Carte() {
   const [mapResetTrigger, setMapResetTrigger] = useState(false);
   const [inondationData, setInondationData] = useState(null);
   const [adresseSaisie, setAdresseSaisie] = useState('');
-  const [positionData, setPositionData] = useState([51.505, -0.09]);
-  const [adresseInformation, setAdresseInformation] = useState('A pretty CSS3 popup.');
-
+  const [positionData, setPositionData] = useState([]);
+  const [adresseInformation, setAdresseInformation] = useState('');
+  const [transcoDepReg, setTranscoDepReg] = useState({});
+  const [boutonScenario1, setboutonScenario1] = useState(false);
+  const [boutonScenario2, setboutonScenario2] = useState(false);
+  const [boutonScenario3, setboutonScenario3] = useState(false);
+  const [boutonScenario4, setboutonScenario4] = useState(false);
+  const [boutonInondation, setboutonInondation] = useState(false);
+  const [boutonIncendie, setboutonIncendie] = useState(false);
+  const [boutonLittoral, setboutonLittoral] = useState(false);
+  const [boutonTempete, setboutonTempete] = useState(false);
   const url = "https://nominatim.openstreetmap.org/search?q=";
   const regex = /\b\d{5}\b/; // \b pour les bornes de mots, \d{5} pour 5 chiffres
+  const [scenario, setScenario] = useState("02Moy");
+
   // Chargement initial des régions
   useEffect(() => {
     axios.get('/carto-risque-clim/data/regions.geojson').then((res) => {
       setRegionsData(res.data);
     });
+  }, []);
+
+  useEffect(() => {
+    const fetchTransco = async () => {
+      try {
+        const response = await axios.get('/carto-risque-clim/data/transco_dep_reg.json');
+        setTranscoDepReg(response.data); // on stocke juste les données
+      } catch (error) {
+        console.error('Erreur lors du chargement de la transco :', error);
+      }
+    };
+
+    fetchTransco();
   }, []);
 
   // Chargement des départements filtrés si une région est sélectionnée
@@ -58,7 +81,7 @@ function Carte() {
         const filtered = {
           ...res.data,
           features: res.data.features.filter(
-            (f) => f.properties.departement === selectedDepartementCode
+            (f) => f.properties.departement === selectedDepartementCode && f.properties.scenario === scenario && boutonInondation === true
           ),
         };
         setInondationData(filtered);
@@ -67,6 +90,23 @@ function Carte() {
       setInondationData(null); // Reset départements
     }
   }, [selectedDepartementCode]);
+
+  useEffect(() => {
+    if (boutonIncendie == true) {
+      axios.get(`/carto-risque-clim/data/inondations/scenario-${selectedDepartementCode}.geojson`).then((res) => {
+        const filtered = {
+          ...res.data,
+          features: res.data.features.filter(
+            (f) => f.properties.departement === selectedDepartementCode && f.properties.scenario === scenario
+          ),
+        };
+        setInondationData(filtered);
+      });
+    } else {
+      setInondationData(null); // Reset départements
+    }
+  }, [selectedDepartementCode]);
+
 
   // Gestion des clics sur les régions
   const onEachRegion = (feature, layer) => {
@@ -139,9 +179,42 @@ function Carte() {
 
   // Fonction pour lancer un Call OpenStreetMap : 
   function rechercheAdresse() {
-    console.log(adresseSaisie);
+    resetToRegions();
     getInfoAdresse(adresseSaisie, url)
   };
+
+  function handleClickboutonScenario1() {
+    setboutonScenario1(prev => !prev);
+    setScenario(['04Fai', '02Moy']);
+  }
+  function handleClickboutonScenario2() {
+    setboutonScenario2(prev => !prev);
+  }
+  function handleClickboutonScenario3() {
+    setboutonScenario3(prev => !prev);
+  }
+  function handleClickboutonScenario4() {
+    setboutonScenario4(prev => !prev);
+  }
+  function handleClickboutonInnondation() {
+    setboutonInondation(prev => !prev);
+  }
+  function handleClickboutonIncendie() {
+    boutonNonFonctionnelle("incendies")
+    // setboutonIncendie(prev => !prev);
+  }
+  function handleClickboutonLittoral() {
+    boutonNonFonctionnelle("littoral")
+    // setboutonLittoral(prev => !prev);
+  }
+  function handleClickboutonTempete() {
+    boutonNonFonctionnelle("tempete")
+    // setboutonTempete(prev => !prev);
+  }
+
+  function boutonNonFoncitonnelle(type) {
+    alert(`Le bouton pour les ${type} n'est pas encore fonctionnel`);
+  }
 
   // Adresse de test : 180, route de Vannes
   async function getInfoAdresse(adresse, url) {
@@ -164,13 +237,17 @@ function Carte() {
 
         if (resultat[0].substr(0, 2) == "20") {  // Si l'adresse est en Corse
           if (Number(resultat[0].substr(0, 3)) > 201) {
+            setSelectedRegionCode(transcoDepReg["2A"]);
             setSelectedDepartementCode("2A") // Corse du Sud : Code Postal 200 - 201
           } else {
+            setSelectedRegionCode(transcoDepReg["2B"]);
             setSelectedDepartementCode("2B") // Haute Corse : Code Postal 202 - 206
           }
         } else if (Number(resultat[0].substr(0, 2)) > 95) {
+          setSelectedRegionCode(transcoDepReg[resultat[0].substr(0, 3)]);
           setSelectedDepartementCode(resultat[0].substr(0, 3))
         } else {
+          setSelectedRegionCode(transcoDepReg[resultat[0].substr(0, 2)]);
           setSelectedDepartementCode(resultat[0].substr(0, 2))
         }
       }
@@ -202,20 +279,26 @@ function Carte() {
           </div>
           <span className='mt-2 mb-4 text-xl underline font-principale-bold'> Choix du risque Climatique : </span>
           <div id='type-risque'>
-            <button className='border-2 rounded-full w-16 h-16 hover:bg-black hover:text-white duration-300 mr-4 ml-4' id="inond">
-             <img src="/carto-risque-clim/media/images/vague.png" alt="" className='ml-3 w-10 h-10'/>
-             </button>
-            <button className='border-2 rounded-full w-16 h-16 hover:bg-black hover:text-white duration-300 mr-4 ml-4' id="incendi">logo</button>
-            <button className='border-2 rounded-full w-16 h-16 hover:bg-black hover:text-white duration-300 mr-4 ml-4' id="littoral">logo</button>
-            <button className='border-2 rounded-full w-16 h-16 hover:bg-black hover:text-white duration-300 mr-4 ml-4' id="tempete">logo</button>
+            <button onClick={handleClickboutonInnondation} className={`${boutonInondation == true ? 'bg-black' : ''} border-2 rounded-full w-16 h-16 hover:bg-black hover:text-white duration-300 mr-4 ml-4`} id="inond">
+              <img src="/carto-risque-clim/media/images/vague.png" alt="" className='ml-3 w-10 h-10' />
+            </button>
+            <button onClick={handleClickboutonIncendie} className={`${boutonIncendie == true ? 'bg-black' : ''} border-2 rounded-full w-16 h-16 duration-300 mr-4 ml-4 cursor-not-allowed`} id="incendi" disabled>
+              <img src="/carto-risque-clim/media/images/feu.png" alt="" className='ml-3 w-10 h-10' />
+            </button>
+            <button onClick={handleClickboutonLittoral} className={`${boutonLittoral == true ? 'bg-black' : ''} border-2 rounded-full w-16 h-16 duration-300 mr-4 ml-4 cursor-not-allowed`} id="littoral" disabled>
+              <img src="/carto-risque-clim/media/images/littoral.png" alt="" className='ml-3 w-10 h-10' />
+            </button>
+            <button onClick={handleClickboutonTempete} className={`${boutonTempete == true ? 'bg-black' : ''} border-2 rounded-full w-16 h-16 duration-300 mr-4 ml-4 cursor-not-allowed`} id="tempete" disabled>
+              <img src="/carto-risque-clim/media/images/tornade.png" alt="" className='ml-3 w-10 h-10' />
+            </button>
           </div>
           <span className='mt-2 text-xl underline font-principale-bold'> Inondations : </span>
           <span className='mt-2 text-xl font-principale'> Choix du Niveau de Probabilité : </span>
           <div id="niv-prob-inond-container" className='mt-4'>
-            <button className='border-2 rounded-full w-13 h-13 text-3xl font-principale-bold hover:bg-black hover:text-white duration-300 mr-4 ml-4' id="prob-For">1</button>
-            <button className='border-2 rounded-full w-13 h-13 text-3xl font-principale-bold hover:bg-black hover:text-white duration-300 mr-4 ml-4' id="prob-Moy">2</button>
-            <button className='border-2 rounded-full w-13 h-13 text-3xl font-principale-bold hover:bg-black hover:text-white duration-300 mr-4 ml-4' id="prob-Mcc">3</button>
-            <button className='border-2 rounded-full w-13 h-13 text-3xl font-principale-bold hover:bg-black hover:text-white duration-300 mr-4 ml-4' id="prob-Fai">4</button>
+            <button onClick={handleClickboutonScenario1} className={`${boutonScenario1 == true ? 'bg-black text-white' : ''} border-2 rounded-full w-13 h-13 text-3xl font-principale-bold hover:bg-black hover:text-white duration-300 mr-4 ml-4`} id="prob-For">1</button>
+            <button onClick={handleClickboutonScenario2} className={`${boutonScenario2 == true ? 'bg-black text-white' : ''} border-2 rounded-full w-13 h-13 text-3xl font-principale-bold hover:bg-black hover:text-white duration-300 mr-4 ml-4`} id="prob-For">2</button>
+            <button onClick={handleClickboutonScenario3} className={`${boutonScenario3 == true ? 'bg-black text-white' : ''} border-2 rounded-full w-13 h-13 text-3xl font-principale-bold hover:bg-black hover:text-white duration-300 mr-4 ml-4`} id="prob-For">3</button>
+            <button onClick={handleClickboutonScenario4} className={`${boutonScenario4 == true ? 'bg-black text-white' : ''} border-2 rounded-full w-13 h-13 text-3xl font-principale-bold hover:bg-black hover:text-white duration-300 mr-4 ml-4`} id="prob-For">4</button>
           </div>
 
         </div>
