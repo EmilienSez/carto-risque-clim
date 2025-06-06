@@ -5,6 +5,18 @@ import axios from 'axios';
 import MapZoomToFeature from './components/MapZoomToFeature';
 import MapResetter from './components/MapResetter';
 import FixMapResize from './components/FixMapResize';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+
+import icon from 'leaflet/dist/images/marker-icon.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+let DefaultIcon = L.icon({
+    iconUrl: icon,
+    shadowUrl: iconShadow
+});
+
+L.Marker.prototype.options.icon = DefaultIcon;
 // import MapPointer from './components/MapPointer';
 
 function Carte() {
@@ -23,12 +35,13 @@ function Carte() {
   const [boutonScenario3, setboutonScenario3] = useState(false);
   const [boutonScenario4, setboutonScenario4] = useState(false);
   const [boutonInondation, setboutonInondation] = useState(false);
+  const [selectedInondation, setSelectedInondation] = useState(false);
   const [boutonIncendie, setboutonIncendie] = useState(false);
   const [boutonLittoral, setboutonLittoral] = useState(false);
   const [boutonTempete, setboutonTempete] = useState(false);
   const url = "https://nominatim.openstreetmap.org/search?q=";
   const regex = /\b\d{5}\b/; // \b pour les bornes de mots, \d{5} pour 5 chiffres
-  const [scenario, setScenario] = useState("02Moy");
+  const [scenario, setScenario] = useState([]);
 
   // Chargement initial des régions
   useEffect(() => {
@@ -74,39 +87,87 @@ function Carte() {
     }
   }, [mapResetTrigger]);
 
-  // Chargement des zones inondables du département filtrées si un département est sélectionnée
-  useEffect(() => {
-    if (selectedDepartementCode) {
-      axios.get(`/carto-risque-clim/data/inondations/scenario-${selectedDepartementCode}.geojson`).then((res) => {
-        const filtered = {
-          ...res.data,
-          features: res.data.features.filter(
-            (f) => f.properties.departement === selectedDepartementCode && f.properties.scenario === scenario && boutonInondation === true
-          ),
-        };
-        setInondationData(filtered);
-      });
-    } else {
-      setInondationData(null); // Reset départements
-    }
-  }, [selectedDepartementCode]);
+  // // Chargement des zones inondables du département filtrées si un département est sélectionnée
+  // useEffect(() => {
+  //   if (selectedDepartementCode && selectedInondation) {
+  //     axios.get(`/carto-risque-clim/data/inondations/scenario-${selectedDepartementCode}.geojson`).then((res) => {
+  //       const filtered = {
+  //         ...res.data,
+  //         features: res.data.features.filter(
+  //           (f) => f.properties.departement === selectedDepartementCode &&
+  //             scenario.includes(f.properties.scenario) === true
+  //         ),
+  //       };
+  //       setInondationData(filtered);
+  //     });
+  //   } else {
+  //     setInondationData(null); // Reset départements
+  //   }
+  // }, [selectedDepartementCode]);
 
-  useEffect(() => {
-    if (boutonIncendie == true) {
-      axios.get(`/carto-risque-clim/data/inondations/scenario-${selectedDepartementCode}.geojson`).then((res) => {
-        const filtered = {
-          ...res.data,
-          features: res.data.features.filter(
-            (f) => f.properties.departement === selectedDepartementCode && f.properties.scenario === scenario
-          ),
-        };
-        setInondationData(filtered);
-      });
-    } else {
-      setInondationData(null); // Reset départements
-    }
-  }, [selectedDepartementCode]);
+  // // Se déclenche lorsqu'on clique sur le bouton d'inondation : 
+  // useEffect(() => {
+  //   if (selectedInondation && selectedDepartementCode) {
+  //     // console.log(selectedDepartementCode);
+  //     console.log(scenario);
+  //     axios.get(`/carto-risque-clim/data/inondations/scenario-${selectedDepartementCode}.geojson`).then((res) => {
+  //       const filtered = {
+  //         ...res.data,
+  //         features: res.data.features.filter(
+  //           (f) => f.properties.departement === selectedDepartementCode &&
+  //             scenario.includes(f.properties.scenario) === true
+  //         ),
+  //       };
+  //       setInondationData(filtered);
+  //     });
+  //   } else {
+  //     setInondationData(null); // Reset départements
+  //   }
+  // }, [selectedInondation]);
 
+  // // Se déclenche lorsqu'on clique sur un des boutons de scénario
+  // useEffect(() => {
+  //   if (selectedInondation && selectedDepartementCode) {
+  //     // console.log(selectedDepartementCode);
+  //     console.log(scenario);
+  //     axios.get(`/carto-risque-clim/data/inondations/scenario-${selectedDepartementCode}.geojson`).then((res) => {
+  //       const filtered = {
+  //         ...res.data,
+  //         features: res.data.features.filter(
+  //           (f) => f.properties.departement === selectedDepartementCode &&
+  //             scenario.includes(f.properties.scenario) === true
+  //         ),
+  //       };
+  //       setInondationData(filtered);
+  //     });
+  //   } else {
+  //     setInondationData(null); // Reset départements
+  //   }
+  // }, [scenario]);
+
+  // Test : 
+  useEffect(() => {
+    setInondationData(null);
+    if (selectedInondation && selectedDepartementCode && scenario.length > 0) {
+      console.log("Chargement des données avec scenario :", scenario);
+      axios
+        .get(`/carto-risque-clim/data/inondations/scenario-${selectedDepartementCode}.geojson`)
+        .then((res) => {
+          const filtered = {
+            ...res.data,
+            features: res.data.features.filter(
+              (f) =>
+                f.properties.departement === selectedDepartementCode &&
+                scenario.includes(f.properties.scenario)
+            ),
+          };
+          console.log("Mise à jour des données inondation :", filtered);
+          setInondationData(filtered);
+        });
+    } else {
+      setInondationData(null);
+    }
+  }, [selectedInondation, selectedDepartementCode, scenario]);
 
   // Gestion des clics sur les régions
   const onEachRegion = (feature, layer) => {
@@ -184,20 +245,88 @@ function Carte() {
   };
 
   function handleClickboutonScenario1() {
-    setboutonScenario1(prev => !prev);
-    setScenario(['04Fai', '02Moy']);
-  }
+    setboutonScenario1(prev => {
+      const newValue = !prev;
+
+      setScenario(prevScenario => {
+        if (newValue) {
+          // Ajoute "01Fai" uniquement si ce n'est pas déjà dans le tableau
+          return prevScenario.includes("01For")
+            ? prevScenario
+            : [...prevScenario, "01For"];
+        } else {
+          return prevScenario = prevScenario.filter(val => val !== "01For");;
+        }
+      });
+
+      return newValue;
+    });
+  };
+
   function handleClickboutonScenario2() {
-    setboutonScenario2(prev => !prev);
-  }
+    setboutonScenario2(prev => {
+      const newValue = !prev;
+
+      setScenario(prevScenario => {
+        if (newValue) {
+          // Ajoute "01Fai" uniquement si ce n'est pas déjà dans le tableau
+          return prevScenario.includes("02Moy")
+            ? prevScenario
+            : [...prevScenario, "02Moy"];
+        } else {
+          return prevScenario = prevScenario.filter(val => val !== "02Moy");;
+        }
+      });
+
+      return newValue;
+    });
+  };
+
   function handleClickboutonScenario3() {
-    setboutonScenario3(prev => !prev);
-  }
+    setboutonScenario3(prev => {
+      const newValue = !prev;
+
+      setScenario(prevScenario => {
+        if (newValue) {
+          // Ajoute "01Fai" uniquement si ce n'est pas déjà dans le tableau
+          return prevScenario.includes("03Mcc")
+            ? prevScenario
+            : [...prevScenario, "03Mcc"];
+        } else {
+          return prevScenario = prevScenario.filter(val => val !== "03Mcc");;
+        }
+      });
+
+      return newValue;
+    });
+  };
+
   function handleClickboutonScenario4() {
-    setboutonScenario4(prev => !prev);
-  }
+    setboutonScenario4(prev => {
+      const newValue = !prev;
+
+      setScenario(prevScenario => {
+        if (newValue) {
+          // Ajoute "01Fai" uniquement si ce n'est pas déjà dans le tableau
+          return prevScenario.includes("04Fai")
+            ? prevScenario
+            : [...prevScenario, "04Fai"];
+        } else {
+          return prevScenario = prevScenario.filter(val => val !== "04Fai");;
+        }
+      });
+
+      return newValue;
+    });
+  };
+
   function handleClickboutonInnondation() {
-    setboutonInondation(prev => !prev);
+    setboutonInondation(prev => {
+      const newValue = !prev;
+      setSelectedInondation(newValue); // ici on utilise directement la bonne valeur
+      return newValue;
+    });
+
   }
   function handleClickboutonIncendie() {
     boutonNonFonctionnelle("incendies")
@@ -212,7 +341,7 @@ function Carte() {
     // setboutonTempete(prev => !prev);
   }
 
-  function boutonNonFoncitonnelle(type) {
+  function boutonNonFonctionnelle(type) {
     alert(`Le bouton pour les ${type} n'est pas encore fonctionnel`);
   }
 
