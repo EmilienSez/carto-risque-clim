@@ -2,6 +2,7 @@ import '../App.css'
 import { MapContainer, TileLayer, GeoJSON, Marker, Popup } from 'react-leaflet';
 import { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
+import pako from 'pako';
 import MapZoomToFeature from './components/MapZoomToFeature';
 import MapResetter from './components/MapResetter';
 import FixMapResize from './components/FixMapResize';
@@ -54,18 +55,33 @@ function Carte() {
   const [boutonIncendie, setboutonIncendie] = useState(false);
   const [boutonTempete, setboutonTempete] = useState(false);
 
-  // Chargement initial des régions
+  // // Chargement initial des régions via gzip
   // useEffect(() => {
-  //   axios.get('/carto-risque-clim/data/regions-1000m.geojson').then((res) => {
-  //     setRegionsData(res.data);
-  //   });
+  //   axios
+  //     .get('/carto-risque-clim/data/regions.geojson.gz', {
+  //       responseType: 'arraybuffer', // <-- important
+  //     })
+  //     .then((res) => {
+  //       // Étape 1 : on décompresse avec Pako
+  //       const uint8Array = new Uint8Array(res.data);
+  //       const decompressed = pako.ungzip(uint8Array, { to: 'string' });
+
+  //       // Étape 2 : on parse le texte en JSON
+  //       const geojson = JSON.parse(decompressed);
+
+  //       // Étape 3 : on met à jour le state
+  //       setRegionsData(geojson);
+  //     })
+  //     .catch((err) => {
+  //       console.error("Erreur lors du chargement du fichier GeoJSON.gz :", err);
+  //     });
   // }, []);
 
   // Chargement initial des régions
   useEffect(() => {
-    axios.get('/carto-risque-clim/data/regions.geojson.gz').then((res) => {
+    axios.get('/carto-risque-clim/data/regions.geojson').then((res) => {
       setRegionsData(res.data);
-    }); 
+    });
   }, []);
 
 
@@ -85,7 +101,7 @@ function Carte() {
   // Chargement des départements filtrés si une région est sélectionnée
   useEffect(() => {
     if (selectedRegionCode) {
-      axios.get('/carto-risque-clim/data/departements.geojson.gz').then((res) => {
+      axios.get('/carto-risque-clim/data/departements.geojson').then((res) => {
         const filtered = {
           ...res.data,
           features: res.data.features.filter(
@@ -106,96 +122,80 @@ function Carte() {
     }
   }, [mapResetTrigger]);
 
-  // // Chargement des zones inondables du département filtrées si un département est sélectionnée
+  // // Affichage des inondations : 
   // useEffect(() => {
-  //   if (selectedDepartementCode && selectedInondation) {
-  //     axios.get(`/carto-risque-clim/data/inondations/scenario-${selectedDepartementCode}.geojson`).then((res) => {
-  //       const filtered = {
-  //         ...res.data,
-  //         features: res.data.features.filter(
-  //           (f) => f.properties.departement === selectedDepartementCode &&
-  //             scenario.includes(f.properties.scenario) === true
-  //         ),
-  //       };
-  //       setInondationData(filtered);
-  //     });
+  //   setInondationData(null);
+  //   if (selectedInondation && selectedDepartementCode && scenario.length > 0) {
+  //     console.log("Chargement des données avec scenario :", scenario);
+  //     axios
+  //       .get(`/carto-risque-clim/data/inondations/scenario-${selectedDepartementCode}.geojson.gz`)
+  //       .then((res) => {
+  //         const filtered = {
+  //           ...res.data,
+  //           features: res.data.features.filter(
+  //             (f) =>
+  //               f.properties.departement === selectedDepartementCode &&
+  //               scenario.includes(f.properties.scenario)
+  //           ),
+  //         };
+  //         console.log("Mise à jour des données inondation :", filtered);
+  //         setInondationData(filtered);
+  //       });
   //   } else {
-  //     setInondationData(null); // Reset départements
+  //     setInondationData(null);
   //   }
-  // }, [selectedDepartementCode]);
+  // }, [selectedInondation, selectedDepartementCode, scenario]);
 
-  // // Se déclenche lorsqu'on clique sur le bouton d'inondation : 
-  // useEffect(() => {
-  //   if (selectedInondation && selectedDepartementCode) {
-  //     // console.log(selectedDepartementCode);
-  //     console.log(scenario);
-  //     axios.get(`/carto-risque-clim/data/inondations/scenario-${selectedDepartementCode}.geojson`).then((res) => {
-  //       const filtered = {
-  //         ...res.data,
-  //         features: res.data.features.filter(
-  //           (f) => f.properties.departement === selectedDepartementCode &&
-  //             scenario.includes(f.properties.scenario) === true
-  //         ),
-  //       };
-  //       setInondationData(filtered);
-  //     });
-  //   } else {
-  //     setInondationData(null); // Reset départements
-  //   }
-  // }, [selectedInondation]);
-
-  // // Se déclenche lorsqu'on clique sur un des boutons de scénario
-  // useEffect(() => {
-  //   if (selectedInondation && selectedDepartementCode) {
-  //     // console.log(selectedDepartementCode);
-  //     console.log(scenario);
-  //     axios.get(`/carto-risque-clim/data/inondations/scenario-${selectedDepartementCode}.geojson`).then((res) => {
-  //       const filtered = {
-  //         ...res.data,
-  //         features: res.data.features.filter(
-  //           (f) => f.properties.departement === selectedDepartementCode &&
-  //             scenario.includes(f.properties.scenario) === true
-  //         ),
-  //       };
-  //       setInondationData(filtered);
-  //     });
-  //   } else {
-  //     setInondationData(null); // Reset départements
-  //   }
-  // }, [scenario]);
-
-  // Test : 
-  useEffect(() => {
+    // Gestion des inondations (avec prise en compte gros fichier) : 
+    useEffect(() => {
     setInondationData(null);
-    if (selectedInondation && selectedDepartementCode && scenario.length > 0) {
-      console.log("Chargement des données avec scenario :", scenario);
-      axios
-        .get(`/carto-risque-clim/data/inondations/scenario-${selectedDepartementCode}.geojson.gz`)
-        .then((res) => {
-          const filtered = {
-            ...res.data,
-            features: res.data.features.filter(
+
+    const loadData = async () => {
+      if (selectedInondation && selectedDepartementCode && scenario.length > 0) {
+        try {
+          const pathRes = await axios.get("/carto-risque-clim/data/path.json");
+          const filePaths = pathRes.data[selectedDepartementCode];
+          // console.log(pathRes, filePaths);
+          if (!filePaths || filePaths.length === 0) {
+            console.log("Aucun chemin trouvé pour ce département");
+            return;
+          }
+
+          const partPromises = filePaths.map((path) => axios.get(path));
+          console.log(partPromises);
+          const allParts = await Promise.all(partPromises);
+          console.log(allParts);
+          const combinedFeatures = allParts.flatMap((res) => res.data.features);
+          console.log(combinedFeatures);
+          const merged = {
+            ...allParts[0].data,
+            features: combinedFeatures.filter(
               (f) =>
                 f.properties.departement === selectedDepartementCode &&
                 scenario.includes(f.properties.scenario)
             ),
           };
-          console.log("Mise à jour des données inondation :", filtered);
-          setInondationData(filtered);
-        });
-    } else {
-      setInondationData(null);
-    }
+
+          setInondationData(merged);
+        } catch (err) {
+          console.error("Erreur lors du chargement des données :", err);
+        }
+      } else {
+        setInondationData(null);
+      }
+    };
+
+    loadData();
   }, [selectedInondation, selectedDepartementCode, scenario]);
 
+
   // Gestion du littoral : 
-// Gestion du littoral : 
   useEffect(() => {
     console.log(littoralData);
     setLittoralData(null);
     if (selectedLittoral && selectedDepartementCode) {
       axios
-        .get(`/carto-risque-clim/data/littoral/littoral-${selectedDepartementCode}.geojson.gz`)
+        .get(`/carto-risque-clim/data/littoral/littoral-${selectedDepartementCode}.geojson`)
         .then((res) => {
           const filtered = {
             ...res.data,
