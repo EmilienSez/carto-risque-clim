@@ -8,12 +8,16 @@ import FixMapResize from './components/FixMapResize';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+
 let DefaultIcon = L.icon({
-    iconUrl: icon,
-    shadowUrl: iconShadow
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+  iconSize: [25, 41], // dimensions officielles de l'icône
+  iconAnchor: [12, 41], // point d'ancrage (base de l'icône)
+  popupAnchor: [1, -34], // point où apparaît le popup
+  shadowSize: [41, 41] // taille de l'ombre
 });
 
 L.Marker.prototype.options.icon = DefaultIcon;
@@ -25,7 +29,6 @@ function Carte() {
   const [selectedRegionCode, setSelectedRegionCode] = useState(null);
   const [selectedDepartementCode, setSelectedDepartementCode] = useState(null);
   const [mapResetTrigger, setMapResetTrigger] = useState(false);
-  const [inondationData, setInondationData] = useState(null);
   const [adresseSaisie, setAdresseSaisie] = useState('');
   const [positionData, setPositionData] = useState([]);
   const [adresseInformation, setAdresseInformation] = useState('');
@@ -34,21 +37,37 @@ function Carte() {
   const [boutonScenario2, setboutonScenario2] = useState(false);
   const [boutonScenario3, setboutonScenario3] = useState(false);
   const [boutonScenario4, setboutonScenario4] = useState(false);
-  const [boutonInondation, setboutonInondation] = useState(false);
-  const [selectedInondation, setSelectedInondation] = useState(false);
-  const [boutonIncendie, setboutonIncendie] = useState(false);
-  const [boutonLittoral, setboutonLittoral] = useState(false);
-  const [boutonTempete, setboutonTempete] = useState(false);
+
   const url = "https://nominatim.openstreetmap.org/search?q=";
   const regex = /\b\d{5}\b/; // \b pour les bornes de mots, \d{5} pour 5 chiffres
   const [scenario, setScenario] = useState([]);
 
+  // Variables liées aux evenements climatiques : 
+  const [inondationData, setInondationData] = useState(null);
+  const [boutonInondation, setboutonInondation] = useState(false);
+  const [selectedInondation, setSelectedInondation] = useState(false);
+
+  const [littoralData, setLittoralData] = useState(null);
+  const [boutonLittoral, setboutonLittoral] = useState(false);
+  const [selectedLittoral, setSelectedLittoral] = useState(false);
+
+  const [boutonIncendie, setboutonIncendie] = useState(false);
+  const [boutonTempete, setboutonTempete] = useState(false);
+
+  // Chargement initial des régions
+  // useEffect(() => {
+  //   axios.get('/carto-risque-clim/data/regions-1000m.geojson').then((res) => {
+  //     setRegionsData(res.data);
+  //   });
+  // }, []);
+
   // Chargement initial des régions
   useEffect(() => {
-    axios.get('/carto-risque-clim/data/regions.geojson').then((res) => {
+    axios.get('/carto-risque-clim/data/regions.geojson.gz').then((res) => {
       setRegionsData(res.data);
-    });
+    }); 
   }, []);
+
 
   useEffect(() => {
     const fetchTransco = async () => {
@@ -66,7 +85,7 @@ function Carte() {
   // Chargement des départements filtrés si une région est sélectionnée
   useEffect(() => {
     if (selectedRegionCode) {
-      axios.get('/carto-risque-clim/data/departements.geojson').then((res) => {
+      axios.get('/carto-risque-clim/data/departements.geojson.gz').then((res) => {
         const filtered = {
           ...res.data,
           features: res.data.features.filter(
@@ -151,7 +170,7 @@ function Carte() {
     if (selectedInondation && selectedDepartementCode && scenario.length > 0) {
       console.log("Chargement des données avec scenario :", scenario);
       axios
-        .get(`/carto-risque-clim/data/inondations/scenario-${selectedDepartementCode}.geojson`)
+        .get(`/carto-risque-clim/data/inondations/scenario-${selectedDepartementCode}.geojson.gz`)
         .then((res) => {
           const filtered = {
             ...res.data,
@@ -168,6 +187,38 @@ function Carte() {
       setInondationData(null);
     }
   }, [selectedInondation, selectedDepartementCode, scenario]);
+
+  // Gestion du littoral : 
+// Gestion du littoral : 
+  useEffect(() => {
+    console.log(littoralData);
+    setLittoralData(null);
+    if (selectedLittoral && selectedDepartementCode) {
+      axios
+        .get(`/carto-risque-clim/data/littoral/littoral-${selectedDepartementCode}.geojson.gz`)
+        .then((res) => {
+          const filtered = {
+            ...res.data,
+            features: res.data.features.filter(
+              (f) =>
+                f.properties.departement === selectedDepartementCode
+            ),
+          };
+          console.log("Mise à jour des données littoral :", filtered);
+          setLittoralData(filtered);
+          console.log(littoralData);
+        });
+    } else {
+      setLittoralData(null);
+      console.log(littoralData);
+    }
+  }, [selectedLittoral, selectedDepartementCode]);
+
+  // Changement de positionData : 
+  useEffect(() => {
+    console.log("Les données ont changé " + positionData)
+  }, [positionData]);
+
 
   // Gestion des clics sur les régions
   const onEachRegion = (feature, layer) => {
@@ -230,11 +281,30 @@ function Carte() {
     });
   };
 
+  const onEachZoneLittoral = (feature, layer) => {
+    layer.on({
+      mouseover: (e) => {
+        const layer = e.target;
+        layer.bindTooltip(
+          `<strong>Surface : ${feature.properties.surf}</strong>
+          <br/>Loi-litt :`, {
+          sticky: true,
+          direction: 'top',
+          opacity: 0.9,
+        }).openTooltip();
+      },
+      mouseout: (e) => {
+        e.target.closeTooltip();
+      },
+    });
+  };
+
   // Fonction pour revenir en arrière (optionnel)
   const resetToRegions = () => {
     setSelectedRegionCode(null);
     setSelectedDepartementCode(null);
     setInondationData(null);
+    setLittoralData(null);
     setMapResetTrigger(true); // 🧭 active le recentrage
   };
 
@@ -326,15 +396,19 @@ function Carte() {
       setSelectedInondation(newValue); // ici on utilise directement la bonne valeur
       return newValue;
     });
-
   }
+
   function handleClickboutonIncendie() {
     boutonNonFonctionnelle("incendies")
     // setboutonIncendie(prev => !prev);
   }
+
   function handleClickboutonLittoral() {
-    boutonNonFonctionnelle("littoral")
-    // setboutonLittoral(prev => !prev);
+    setboutonLittoral(prev => {
+      const newValue = !prev;
+      setSelectedLittoral(newValue); // ici on utilise directement la bonne valeur
+      return newValue;
+    });
   }
   function handleClickboutonTempete() {
     boutonNonFonctionnelle("tempete")
@@ -414,7 +488,7 @@ function Carte() {
             <button onClick={handleClickboutonIncendie} className={`${boutonIncendie == true ? 'bg-black' : ''} border-2 rounded-full w-16 h-16 duration-300 mr-4 ml-4 cursor-not-allowed`} id="incendi" disabled>
               <img src="/carto-risque-clim/media/images/feu.png" alt="" className='ml-3 w-10 h-10' />
             </button>
-            <button onClick={handleClickboutonLittoral} className={`${boutonLittoral == true ? 'bg-black' : ''} border-2 rounded-full w-16 h-16 duration-300 mr-4 ml-4 cursor-not-allowed`} id="littoral" disabled>
+            <button onClick={handleClickboutonLittoral} className={`${boutonLittoral == true ? 'bg-black' : ''} border-2 rounded-full w-16 h-16 hover:bg-black hover:text-white duration-300 mr-4 ml-4`} id="littoral">
               <img src="/carto-risque-clim/media/images/littoral.png" alt="" className='ml-3 w-10 h-10' />
             </button>
             <button onClick={handleClickboutonTempete} className={`${boutonTempete == true ? 'bg-black' : ''} border-2 rounded-full w-16 h-16 duration-300 mr-4 ml-4 cursor-not-allowed`} id="tempete" disabled>
@@ -449,7 +523,7 @@ function Carte() {
                 data={regionsData}
                 onEachFeature={onEachRegion}
                 style={(feature) => {
-                  const zoneBBPL = feature.properties.Zone_BBPL;
+                  const zoneBBPL = feature.properties.zone_bbpl;
                   let color = 'blue'; // valeur par défaut
 
                   switch (zoneBBPL) {
@@ -501,6 +575,14 @@ function Carte() {
               />
             )}
 
+            {littoralData && (
+              <GeoJSON
+                data={littoralData}
+                style={{ color: 'navy' }}
+                onEachFeature={onEachZoneInondable}
+              />
+            )}
+
             <MapResetter
               trigger={mapResetTrigger}
               center={[46.5, 2.5]}
@@ -513,8 +595,6 @@ function Carte() {
               </Popup>
             </Marker>
             )}
-
-            {/* <MapPointer position={position}/> */}
 
           </MapContainer>
         </div>
