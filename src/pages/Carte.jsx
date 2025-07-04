@@ -2,6 +2,7 @@ import '../App.css'
 import { MapContainer, TileLayer, GeoJSON, Marker, Popup } from 'react-leaflet';
 import { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
+import pako from 'pako';
 import MapZoomToFeature from './components/MapZoomToFeature';
 import MapResetter from './components/MapResetter';
 import FixMapResize from './components/FixMapResize';
@@ -55,18 +56,33 @@ function Carte() {
   const [boutonTempete, setboutonTempete] = useState(false);
 
   // Chargement initial des régions
+  useEffect(() => {
+    axios
+      .get('/carto-risque-clim/data/regions.geojson.gz', {
+        responseType: 'arraybuffer', // <-- important
+      })
+      .then((res) => {
+        // Étape 1 : on décompresse avec Pako
+        const uint8Array = new Uint8Array(res.data);
+        const decompressed = pako.ungzip(uint8Array, { to: 'string' });
+
+        // Étape 2 : on parse le texte en JSON
+        const geojson = JSON.parse(decompressed);
+
+        // Étape 3 : on met à jour le state
+        setRegionsData(geojson);
+      })
+      .catch((err) => {
+        console.error("Erreur lors du chargement du fichier GeoJSON.gz :", err);
+      });
+  }, []);
+
+  // Chargement initial des régions
   // useEffect(() => {
-  //   axios.get('/carto-risque-clim/data/regions-1000m.geojson').then((res) => {
+  //   axios.get('/carto-risque-clim/data/regions.geojson.gz').then((res) => {
   //     setRegionsData(res.data);
   //   });
   // }, []);
-
-  // Chargement initial des régions
-  useEffect(() => {
-    axios.get('/carto-risque-clim/data/regions.geojson.gz').then((res) => {
-      setRegionsData(res.data);
-    });
-  }, []);
 
 
   useEffect(() => {
