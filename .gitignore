@@ -23,4 +23,3 @@ dist-ssr
 *.sln
 *.sw?
 
-/public/data/inondations/scenario-34.geojson

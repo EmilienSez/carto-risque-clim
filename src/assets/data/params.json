@@ -1,0 +1,25 @@
+{
+    "boutons_type" : {
+        "bouton_inondation" : {
+            "icone" : "/carto-risque-clim/media/images/vague.png",
+            "activated" : true
+        },
+        "bouton_incendie" : {
+            "icone" : "/carto-risque-clim/media/images/feu.png",
+            "activated" : false
+        },
+        "bouton_littoral" : {
+            "icone" : "/carto-risque-clim/media/images/littoral.png",
+            "activated" : true
+        },
+        "bouton_cata" : {
+            "icone" : "/carto-risque-clim/media/images/tornade.png",
+            "activated" : false
+        }
+    },
+    "test" : {
+        "test1" : {
+            "data1" : true
+        }
+    }
+}

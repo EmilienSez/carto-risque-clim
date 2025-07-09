@@ -1,13 +1,20 @@
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { useState } from 'react'
 import Carte from './pages/Carte';
-import './App.css'
+import Documentation from './pages/Documentation';
+
+// import './App.css'
+import './output.css'
 
 function App() {
-
+  
   return (
-    <div className='main-content'>
-    <Carte/>
-    </div>
+      <Router>
+      <Routes>
+        <Route path="/carto-risque-clim/" element={<Carte/>} />
+        <Route path="/carto-risque-clim/documentation" element={<Documentation/>} />
+      </Routes>
+    </Router>
   )
 }
 

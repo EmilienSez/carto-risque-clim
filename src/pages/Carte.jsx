@@ -1,13 +1,17 @@
-import '../App.css'
+// import '../App.css'
+import '../output.css'
 import { MapContainer, TileLayer, GeoJSON, Marker, Popup } from 'react-leaflet';
 import { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
-import pako from 'pako';
 import MapZoomToFeature from './components/MapZoomToFeature';
 import MapResetter from './components/MapResetter';
 import FixMapResize from './components/FixMapResize';
+import BoutonType from './components/BoutonType';
+import InfoBulle from './components/InfoBulle';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import paramsData from '../assets/data/params.json'
+import { Link } from 'react-router-dom';
 
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -55,6 +59,14 @@ function Carte() {
   const [boutonIncendie, setboutonIncendie] = useState(false);
   const [boutonTempete, setboutonTempete] = useState(false);
 
+
+  let icoSize = 16;
+  let bulleSize = 10
+  let marginBulle = 3;
+  let marginLRSize = 2;
+
+  // const databoutonType = Object.entries(paramsData.boutons_type);
+  // console.log(databoutonType)
   // // Chargement initial des régions via gzip
   // useEffect(() => {
   //   axios
@@ -146,8 +158,8 @@ function Carte() {
   //   }
   // }, [selectedInondation, selectedDepartementCode, scenario]);
 
-    // Gestion des inondations (avec prise en compte gros fichier) : 
-    useEffect(() => {
+  // Gestion des inondations (avec prise en compte gros fichier) : 
+  useEffect(() => {
     setInondationData(null);
 
     const loadData = async () => {
@@ -394,6 +406,7 @@ function Carte() {
     setboutonInondation(prev => {
       const newValue = !prev;
       setSelectedInondation(newValue); // ici on utilise directement la bonne valeur
+      console.log(newValue)
       return newValue;
     });
   }
@@ -462,7 +475,7 @@ function Carte() {
   return (
     <>
       <div className="grid grid-cols-4 h-screen">
-        <div className="flex flex-col items-center h-full col-span-1 bg-[#F2F2F2] overflow-auto">
+        <div className="flex flex-col items-center h-full col-span-1 bg-[#fffade] overflow-auto z-10">
           <span className="text-3xl text-center font-principale-bold underline mb-4">Cartographie des Risques Climatique</span>
           <button
             onClick={resetToRegions}
@@ -471,8 +484,8 @@ function Carte() {
             <span className="font-principale text-xl">Retour Carte</span>
           </button>
           <span className='mt-2 mb-4 text-xl underline font-principale-bold'> Recherche via une adresse : </span>
-          <div className='flex justify-center'>
-            <input type="text" className='border-2 rounded-full font-principale-bold bg-gray-200 w-90 text-center mr-4' placeholder='Veuillez saisir une adresse...'
+          <div className='flex justify-center w-full'>
+            <input type="text" className='border-2 rounded-full font-principale-bold bg-gray-200 w-[80%] text-center mr-4' placeholder='Veuillez saisir une adresse...'
               value={adresseSaisie}
               onChange={e => setAdresseSaisie(e.target.value)}
             />
@@ -481,32 +494,62 @@ function Carte() {
             </button>
           </div>
           <span className='mt-2 mb-4 text-xl underline font-principale-bold'> Choix du risque Climatique : </span>
-          <div id='type-risque'>
-            <button onClick={handleClickboutonInnondation} className={`${boutonInondation == true ? 'bg-black' : ''} border-2 rounded-full w-16 h-16 hover:bg-black hover:text-white duration-300 mr-4 ml-4`} id="inond">
-              <img src="/carto-risque-clim/media/images/vague.png" alt="" className='ml-3 w-10 h-10' />
+          <div id='type-risque' className="flex border-2 rounded-full items-center p-2 bg-[#ffde59] border-[#ffde59] ">
+            <button onClick={handleClickboutonInnondation}
+              className={`${boutonInondation == true ? 'bg-[#ffde59]' : 'bg-[#fffade]'} border-2 rounded-full w-${icoSize} h-${icoSize} hover:bg-[#ffde59] hover:text-white duration-300 mr-${marginLRSize} ml-${marginLRSize} border-[#fffade]`}
+              id="inond">
+              <img src="/carto-risque-clim/media/images/vague.png" alt="" className={`ml-${marginBulle} w-${bulleSize} h-${bulleSize}`} />
             </button>
-            <button onClick={handleClickboutonIncendie} className={`${boutonIncendie == true ? 'bg-black' : ''} border-2 rounded-full w-16 h-16 duration-300 mr-4 ml-4 cursor-not-allowed`} id="incendi" disabled>
-              <img src="/carto-risque-clim/media/images/feu.png" alt="" className='ml-3 w-10 h-10' />
+            <button onClick={handleClickboutonIncendie}
+              className={`${boutonIncendie == true ? 'bg-[#ffde59]' : 'bg-[#fffade]'} border-2 rounded-full w-${icoSize} h-${icoSize} hover:text-white duration-300 mr-${marginLRSize} ml-${marginLRSize} border-[#fffade] cursor-not-allowed`}
+              id="incendi"
+              disabled>
+              <img src="/carto-risque-clim/media/images/feu.png" alt="" className={`ml-${marginBulle} w-${bulleSize} h-${bulleSize}`} />
             </button>
-            <button onClick={handleClickboutonLittoral} className={`${boutonLittoral == true ? 'bg-black' : ''} border-2 rounded-full w-16 h-16 hover:bg-black hover:text-white duration-300 mr-4 ml-4`} id="littoral">
-              <img src="/carto-risque-clim/media/images/littoral.png" alt="" className='ml-3 w-10 h-10' />
+            <button onClick={handleClickboutonLittoral} className={`${boutonLittoral == true ? 'bg-[#ffde59]' : 'bg-[#fffade]'} border-2 rounded-full w-${icoSize} h-${icoSize} hover:bg-[#ffde59] hover:text-white duration-300 mr-${marginLRSize} ml-${marginLRSize} border-[#fffade]`}
+              id="littoral">
+              <img src="/carto-risque-clim/media/images/littoral.png" alt="" className={`ml-${marginBulle} w-${bulleSize} h-${bulleSize}`} />
             </button>
-            <button onClick={handleClickboutonTempete} className={`${boutonTempete == true ? 'bg-black' : ''} border-2 rounded-full w-16 h-16 duration-300 mr-4 ml-4 cursor-not-allowed`} id="tempete" disabled>
-              <img src="/carto-risque-clim/media/images/tornade.png" alt="" className='ml-3 w-10 h-10' />
+            <button onClick={handleClickboutonTempete} className={`${boutonTempete == true ? 'bg-[#ffde59]' : 'bg-[#fffade]'} border-2 rounded-full w-${icoSize} h-${icoSize} hover:text-white duration-300 mr-${marginLRSize} ml-${marginLRSize} border-[#fffade] cursor-not-allowed`}
+              id="tempete" disabled>
+              <img src="/carto-risque-clim/media/images/tornade.png" alt="" className={`ml-${marginBulle} w-${bulleSize} h-${bulleSize}`} />
             </button>
-          </div>
-          <span className='mt-2 text-xl underline font-principale-bold'> Inondations : </span>
-          <span className='mt-2 text-xl font-principale'> Choix du Niveau de Probabilité : </span>
-          <div id="niv-prob-inond-container" className='mt-4'>
-            <button onClick={handleClickboutonScenario1} className={`${boutonScenario1 == true ? 'bg-black text-white' : ''} border-2 rounded-full w-13 h-13 text-3xl font-principale-bold hover:bg-black hover:text-white duration-300 mr-4 ml-4`} id="prob-For">1</button>
-            <button onClick={handleClickboutonScenario2} className={`${boutonScenario2 == true ? 'bg-black text-white' : ''} border-2 rounded-full w-13 h-13 text-3xl font-principale-bold hover:bg-black hover:text-white duration-300 mr-4 ml-4`} id="prob-For">2</button>
-            <button onClick={handleClickboutonScenario3} className={`${boutonScenario3 == true ? 'bg-black text-white' : ''} border-2 rounded-full w-13 h-13 text-3xl font-principale-bold hover:bg-black hover:text-white duration-300 mr-4 ml-4`} id="prob-For">3</button>
-            <button onClick={handleClickboutonScenario4} className={`${boutonScenario4 == true ? 'bg-black text-white' : ''} border-2 rounded-full w-13 h-13 text-3xl font-principale-bold hover:bg-black hover:text-white duration-300 mr-4 ml-4`} id="prob-For">4</button>
           </div>
 
+          {/* <br />
+          <div id='type-risque' className="flex border-2 rounded-full items-center p-2 bg-[#ffde59] border-[#ffde59] ">
+          {databoutonType.map(([key, value]) => (
+            <BoutonType
+              key={key}
+              ico={value.icone}
+              actif={value.activated}
+            />
+          ))}
+          </div> */}
+
+          <span className='mt-2 text-xl underline font-principale-bold'> Inondations : </span>
+          <span className='flex mt-2 text-xl font-principale justify-center'> Choix du Niveau de Probabilité
+            <InfoBulle /> :
+          </span>
+          <div id="niv-prob-inond-container" className="flex border-2 rounded-full items-center p-2 bg-[#ffde59] border-[#ffde59] mt-2">
+            <button onClick={handleClickboutonScenario1} className={`${boutonScenario1 == true ? 'bg-[#ffde59] text-[#fffade]' : 'bg-[#fffade]'} border-2 border-[#fffade] rounded-full w-13 h-13 text-3xl font-principale-bold hover:bg-[#ffde59] hover:text-white duration-300 mr-2 ml-2`} id="prob-For">1</button>
+            <button onClick={handleClickboutonScenario2} className={`${boutonScenario2 == true ? 'bg-[#ffde59] text-[#fffade]' : 'bg-[#fffade]'} border-2 border-[#fffade] rounded-full w-13 h-13 text-3xl font-principale-bold hover:bg-[#ffde59] hover:text-white duration-300 mr-2 ml-2`} id="prob-For">2</button>
+            <button onClick={handleClickboutonScenario3} className={`${boutonScenario3 == true ? 'bg-[#ffde59] text-[#fffade]' : 'bg-[#fffade]'} border-2 border-[#fffade] rounded-full w-13 h-13 text-3xl font-principale-bold hover:bg-[#ffde59] hover:text-white duration-300 mr-2 ml-2`} id="prob-For">3</button>
+            <button onClick={handleClickboutonScenario4} className={`${boutonScenario4 == true ? 'bg-[#ffde59] text-[#fffade]' : 'bg-[#fffade]'} border-2 border-[#fffade] rounded-full w-13 h-13 text-3xl font-principale-bold hover:bg-[#ffde59] hover:text-white duration-300 mr-2 ml-2`} id="prob-For">4</button>
+          </div>
+            <div className='flex items-center absolute bottom-0 p-4'>
+              <Link to="/carto-risque-clim/documentation">
+              <button
+                // onClick={resetToRegions}
+                className="flex items-center space-x-6 border-2 border-[#c6b8ff] hover:bg-[#c6b8ff] text-black font-bold py-1 px-4 rounded-4xl duration-300">
+                <img src="/carto-risque-clim/media/images/retour.png" alt="Icône" className="w-8 h-8" />
+                <span className="font-principale text-xl">Documentation</span>
+              </button>
+              </Link>
+            </div>
         </div>
 
-        <div className=" col-span-3 h-full w-full">
+        <div className=" col-span-3 h-full w-full z-0">
           <MapContainer
             center={[46.5, 2.5]}
             zoom={6}

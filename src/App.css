@@ -1,8 +1,14 @@
+/* Lancer tailwind : -	npx @tailwindcss/cli -i ./src/App.css -o ./src/output.css --watch */
 @import "tailwindcss";
 
 @font-face {
   font-family: Quicksand;
   src: url(./assets/font/static/Quicksand-Regular.ttf);
+}
+
+@font-face {
+  font-family: Quicksand-Bold;
+  src: url(./assets/font/static/Quicksand-Bold.ttf);
 }
 
 #root {
@@ -89,10 +95,10 @@
 }
 
 .font-principale-bold {
-  font-family: "Quicksand", sans-serif;
+  font-family: Quicksand-Bold, sans-serif;
   font-optical-sizing: auto;
   font-weight: 500;
-  font-style: light;
+  font-style: bold;
 }
 
 .changer-couleur {
