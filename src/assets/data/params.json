@@ -17,9 +17,25 @@
             "activated" : false
         }
     },
-    "test" : {
-        "test1" : {
-            "data1" : true
+    "transco" : {
+        "probabilite" : {
+            "01For" : "Forte probabilité",
+            "02Moy" : "Moyenne probabilité",
+            "03Mcc" : "Moyenne probabilité en prenant en compte le changement climatique",
+            "04Fai" : "Faible probabilité"
+        },
+        "type_inondation" : {
+            "01" : "Débordement de cours d'eau",
+            "02" : "Ruissellement",
+            "03" : "Submersion marine",
+            "04" : "Débordement des nappes phréatiques"
+        },
+        "type_littoral" : {
+            "Mer" : "Mer",
+            "Estuaire" : "Estuaire",
+            "Non" : "Non",
+            "Mer / Lac" : "Mer / Lac",
+            "Mer / Estuaire" : "Mer / Estuaire"
         }
     }
 }

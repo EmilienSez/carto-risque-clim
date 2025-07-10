@@ -1,11 +1,38 @@
-{"inondation" : {
-    "titre" : "Documentation - Inondation",
-    "description" : "Les Zones inondables sont issues d'une étude du COVADIS",
-    "source" : "https://www.canva.com/design/DAGn5h-NWMM/gU-B9GJMRLSavj41hXi3eg/edit"
-},
-"littoral" : {
-    "titre" : "Documentation - Littoral",
-    "description" : "Cette études proviens du site GéoLittoral",
-    "source" : "https://tailwindcss.com/docs/cursor"
-}
+{
+    "inondation": {
+        "titre": "Documentation - Inondation",
+        "introduction": "Ce jeu de données est fournies par le site Géorisques et se concentre sur les Territoires à Risques important d'Inondation (TRI) - version 2 (millésime 2020). Les données ont été élaborées selon le standard Directive Inondation v2 :  il s'agit principalement d'une mise à jour des données de rapportage 2013. Concernant les données il s'agit d'une carte des surfaces inondables selon 4 scénario établie par les personnes en charge de l'étude. Les scénarios sont les suivants : Forte probabilité, Moyenne probabilité, Moyenne probabilité en prenant en compte le changement climatique, Faible probabilité. De plus, il y a différent type d'inondation : Débordement de cours d'eau, ruissellement, Submersion marine, débordement des nappes phréatiques",
+        "sommaire": "",
+        "description": "",
+        "source": [
+            "https://www.georisques.gouv.fr/donnees/bases-de-donnees/zonages-inondation-rapportage-2020",
+            "https://files.georisques.fr/di_2020/COVADIS_standard_DI_v2.1.pdf"
+        ]
+    },
+    "littoral": {
+        "titre": "Documentation - Littoral",
+        "introduction": "Cette études proviens du site GéoLittoral, nous avons récupérés une Cartographie nationale des zones basses du littoral et recul événementiel du trait de côte. Nous travaillons avec la carto censé prendre en compte le changement climatique, le scénatio s'appelle Zones Basses par rapport à la PHMA + 1 mètre (d'augmentation du niveau de la mer)",
+        "sommaire": "",
+        "description": "Cette visualisation est intéressante car elle intègre dans son étude le changement climatique. Cependant la ou le GIEC prévoit une augmetation du niveau des océans entre 0.28 et 0.55m dans un scénario favorable et de 0.63m à 1.02m dans le pire scénario. Notre scénario ",
+        "source": [
+            "https://www.geolittoral.developpement-durable.gouv.fr/elevation-du-niveau-de-la-mer-a1439.html",
+            "https://www.geolittoral.developpement-durable.gouv.fr/telechargement-en-ligne-donnees-geolittoral-a802.html",
+            "https://data.geocatalogue.fr/id/dataset/4a271568-122a-4261-81a4-724ebd2083e2",
+            "https://www.statistiques.developpement-durable.gouv.fr/edition-numerique/chiffres-cles-du-climat/fr/4-scenarios-et-projections-climatiques#:~:text=%C3%80%20l%27horizon%202100%2C%20le,sc%C3%A9nario%20(SSP5%2D8.5)."
+        ]
+    },
+    "incendie": {
+        "titre": "Documentation - Incendie",
+        "introduction": "",
+        "sommaire": "",
+        "description": "",
+        "source": []
+    },
+    "catastrophe": {
+        "titre": "Documentation - Catastrophe Naturelle",
+        "introduction": "",
+        "sommaire": "",
+        "description": "",
+        "source": []
+    }
 }

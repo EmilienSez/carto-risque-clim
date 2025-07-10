@@ -38,14 +38,28 @@ function Carte() {
   const [positionData, setPositionData] = useState([]);
   const [adresseInformation, setAdresseInformation] = useState('');
   const [transcoDepReg, setTranscoDepReg] = useState({});
-  const [boutonScenario1, setboutonScenario1] = useState(false);
-  const [boutonScenario2, setboutonScenario2] = useState(false);
-  const [boutonScenario3, setboutonScenario3] = useState(false);
-  const [boutonScenario4, setboutonScenario4] = useState(false);
+
+  const [boutonScenarioInondation1, setboutonScenarioInondation1] = useState(false);
+  const [boutonScenarioInondation2, setboutonScenarioInondation2] = useState(false);
+  const [boutonScenarioInondation3, setboutonScenarioInondation3] = useState(false);
+  const [boutonScenarioInondation4, setboutonScenarioInondation4] = useState(false);
+  const [scenario, setScenario] = useState([]);
+
+  const [boutonTypeInondation1, setboutonTypeInondation1] = useState(false);
+  const [boutonTypeInondation2, setboutonTypeInondation2] = useState(false);
+  const [boutonTypeInondation3, setboutonTypeInondation3] = useState(false);
+  const [boutonTypeInondation4, setboutonTypeInondation4] = useState(false);
+  const [typeInondation, setTypeInondation] = useState([]);
+
+  const [boutonTypeLittoral1, setboutonTypeLittoral1] = useState(false);
+  const [boutonTypeLittoral2, setboutonTypeLittoral2] = useState(false);
+  const [boutonTypeLittoral3, setboutonTypeLittoral3] = useState(false);
+  const [boutonTypeLittoral4, setboutonTypeLittoral4] = useState(false);
+  const [boutonTypeLittoral5, setboutonTypeLittoral5] = useState(false);
+  const [typeLittoral, setTypeLittoral] = useState([]);
 
   const url = "https://nominatim.openstreetmap.org/search?q=";
   const regex = /\b\d{5}\b/; // \b pour les bornes de mots, \d{5} pour 5 chiffres
-  const [scenario, setScenario] = useState([]);
 
   // Variables liées aux evenements climatiques : 
   const [inondationData, setInondationData] = useState(null);
@@ -59,14 +73,11 @@ function Carte() {
   const [boutonIncendie, setboutonIncendie] = useState(false);
   const [boutonTempete, setboutonTempete] = useState(false);
 
-
   let icoSize = 16;
   let bulleSize = 10
   let marginBulle = 3;
   let marginLRSize = 2;
 
-  // const databoutonType = Object.entries(paramsData.boutons_type);
-  // console.log(databoutonType)
   // // Chargement initial des régions via gzip
   // useEffect(() => {
   //   axios
@@ -133,8 +144,14 @@ function Carte() {
       setMapResetTrigger(false);
     }
   }, [mapResetTrigger]);
+  // Reset de la carte
 
-  // // Affichage des inondations : 
+  useEffect(() => {
+    // console.log(typeInondation)
+    // console.log(typeLittoral)
+  }, [typeInondation, typeLittoral]);
+
+  // // Affichage des inondations avec GZIP : 
   // useEffect(() => {
   //   setInondationData(null);
   //   if (selectedInondation && selectedDepartementCode && scenario.length > 0) {
@@ -163,7 +180,7 @@ function Carte() {
     setInondationData(null);
 
     const loadData = async () => {
-      if (selectedInondation && selectedDepartementCode && scenario.length > 0) {
+      if (selectedInondation && selectedDepartementCode && scenario.length > 0 && typeInondation.length > 0) {
         try {
           const pathRes = await axios.get("/carto-risque-clim/data/path.json");
           const filePaths = pathRes.data[selectedDepartementCode];
@@ -174,20 +191,21 @@ function Carte() {
           }
 
           const partPromises = filePaths.map((path) => axios.get(path));
-          console.log(partPromises);
+          // console.log(partPromises);
           const allParts = await Promise.all(partPromises);
-          console.log(allParts);
+          // console.log(allParts);
           const combinedFeatures = allParts.flatMap((res) => res.data.features);
-          console.log(combinedFeatures);
+          // console.log(combinedFeatures);
           const merged = {
             ...allParts[0].data,
             features: combinedFeatures.filter(
               (f) =>
                 f.properties.departement === selectedDepartementCode &&
-                scenario.includes(f.properties.scenario)
+                scenario.includes(f.properties.scenario) &&
+                typeInondation.includes(f.properties.typ_inond)
             ),
           };
-
+          console.log(merged)
           setInondationData(merged);
         } catch (err) {
           console.error("Erreur lors du chargement des données :", err);
@@ -198,14 +216,13 @@ function Carte() {
     };
 
     loadData();
-  }, [selectedInondation, selectedDepartementCode, scenario]);
+  }, [selectedInondation, selectedDepartementCode, scenario, typeInondation]);
 
 
   // Gestion du littoral : 
   useEffect(() => {
-    console.log(littoralData);
     setLittoralData(null);
-    if (selectedLittoral && selectedDepartementCode) {
+    if (selectedLittoral && selectedDepartementCode && typeLittoral.length > 0) {
       axios
         .get(`/carto-risque-clim/data/littoral/littoral-${selectedDepartementCode}.geojson`)
         .then((res) => {
@@ -213,22 +230,21 @@ function Carte() {
             ...res.data,
             features: res.data.features.filter(
               (f) =>
-                f.properties.departement === selectedDepartementCode
+                f.properties.departement === selectedDepartementCode &&
+                typeLittoral.includes(f.properties["Loi-litt"])
             ),
           };
           console.log("Mise à jour des données littoral :", filtered);
           setLittoralData(filtered);
-          console.log(littoralData);
         });
     } else {
       setLittoralData(null);
-      console.log(littoralData);
     }
-  }, [selectedLittoral, selectedDepartementCode]);
+  }, [selectedLittoral, selectedDepartementCode, typeLittoral]);
 
   // Changement de positionData : 
   useEffect(() => {
-    console.log("Les données ont changé " + positionData)
+    // console.log("Les données ont changé " + positionData)
   }, [positionData]);
 
 
@@ -275,13 +291,15 @@ function Carte() {
   const onEachZoneInondable = (feature, layer) => {
     layer.on({
       click: () => {
-        console.log("Clic sur la zone inondable");
+        // console.log("Clic sur la zone inondable");
       },
       mouseover: (e) => {
         const layer = e.target;
         layer.bindTooltip(
-          `<strong>Scenario : ${feature.properties.scenario}</strong>
-          <br/>Zone : ${feature.properties.id_tri}`, {
+          `<strong>Scenario : ${paramsData.transco.probabilite[feature.properties.scenario]}</strong>
+          <br/>Type d'inondation : ${paramsData.transco.type_inondation[feature.properties.typ_inond]}
+          <br/>TRI : ${feature.properties.id_tri}
+          <br/>Cours d'eau : ${feature.properties.cours_deau}`, {
           sticky: true,
           direction: 'top',
           opacity: 0.9,
@@ -299,7 +317,7 @@ function Carte() {
         const layer = e.target;
         layer.bindTooltip(
           `<strong>Surface : ${feature.properties.surf}</strong>
-          <br/>Loi-litt :`, {
+          <br/>Zone : ${feature.properties['Loi-litt']}`, {
           sticky: true,
           direction: 'top',
           opacity: 0.9,
@@ -326,8 +344,8 @@ function Carte() {
     getInfoAdresse(adresseSaisie, url)
   };
 
-  function handleClickboutonScenario1() {
-    setboutonScenario1(prev => {
+  function handleClickboutonScenarioInondation1() {
+    setboutonScenarioInondation1(prev => {
       const newValue = !prev;
 
       setScenario(prevScenario => {
@@ -345,8 +363,8 @@ function Carte() {
     });
   };
 
-  function handleClickboutonScenario2() {
-    setboutonScenario2(prev => {
+  function handleClickboutonScenarioInondation2() {
+    setboutonScenarioInondation2(prev => {
       const newValue = !prev;
 
       setScenario(prevScenario => {
@@ -364,8 +382,8 @@ function Carte() {
     });
   };
 
-  function handleClickboutonScenario3() {
-    setboutonScenario3(prev => {
+  function handleClickboutonScenarioInondation3() {
+    setboutonScenarioInondation3(prev => {
       const newValue = !prev;
 
       setScenario(prevScenario => {
@@ -383,8 +401,8 @@ function Carte() {
     });
   };
 
-  function handleClickboutonScenario4() {
-    setboutonScenario4(prev => {
+  function handleClickboutonScenarioInondation4() {
+    setboutonScenarioInondation4(prev => {
       const newValue = !prev;
 
       setScenario(prevScenario => {
@@ -402,11 +420,173 @@ function Carte() {
     });
   };
 
+  function handleClickboutonTypeInondation1() {
+    setboutonTypeInondation1(prev => {
+      const newValue = !prev;
+
+      setTypeInondation(prevtypeInond => {
+        if (newValue) {
+          return prevtypeInond.includes("01")
+            ? prevtypeInond
+            : [...prevtypeInond, "01"];
+        } else {
+          return prevtypeInond = prevtypeInond.filter(val => val !== "01");;
+        }
+      });
+
+      return newValue;
+    });
+  }
+
+  function handleClickboutonTypeInondation2() {
+    setboutonTypeInondation2(prev => {
+      const newValue = !prev;
+
+      setTypeInondation(prevtypeInond => {
+        if (newValue) {
+          return prevtypeInond.includes("02")
+            ? prevtypeInond
+            : [...prevtypeInond, "02"];
+        } else {
+          return prevtypeInond = prevtypeInond.filter(val => val !== "02");;
+        }
+      });
+
+      return newValue;
+    });
+  };
+
+  function handleClickboutonTypeInondation3() {
+    setboutonTypeInondation3(prev => {
+      const newValue = !prev;
+
+      setTypeInondation(prevtypeInond => {
+        if (newValue) {
+          return prevtypeInond.includes("03")
+            ? prevtypeInond
+            : [...prevtypeInond, "03"];
+        } else {
+          return prevtypeInond = prevtypeInond.filter(val => val !== "03");;
+        }
+      });
+
+      return newValue;
+    });
+  };
+
+  function handleClickboutonTypeInondation4() {
+    setboutonTypeInondation4(prev => {
+      const newValue = !prev;
+
+      setTypeInondation(prevtypeInond => {
+        if (newValue) {
+          return prevtypeInond.includes("04")
+            ? prevtypeInond
+            : [...prevtypeInond, "04"];
+        } else {
+          return prevtypeInond = prevtypeInond.filter(val => val !== "04");;
+        }
+      });
+
+      return newValue;
+    });
+  };
+
+  function handleClickboutonTypeLittoral1() {
+    setboutonTypeLittoral1(prev => {
+      const newValue = !prev;
+
+      setTypeLittoral(prevtypeLitto => {
+        if (newValue) {
+          return prevtypeLitto.includes("Mer")
+            ? prevtypeLitto
+            : [...prevtypeLitto, "Mer"];
+        } else {
+          return prevtypeLitto = prevtypeLitto.filter(val => val !== "Mer");;
+        }
+      });
+
+      return newValue;
+    });
+  };
+
+  function handleClickboutonTypeLittoral2() {
+    setboutonTypeLittoral2(prev => {
+      const newValue = !prev;
+
+      setTypeLittoral(prevtypeLitto => {
+        if (newValue) {
+          return prevtypeLitto.includes("Non")
+            ? prevtypeLitto
+            : [...prevtypeLitto, "Non"];
+        } else {
+          return prevtypeLitto = prevtypeLitto.filter(val => val !== "Non");;
+        }
+      });
+
+      return newValue;
+    });
+  };
+
+    function handleClickboutonTypeLittoral3() {
+    setboutonTypeLittoral3(prev => {
+      const newValue = !prev;
+
+      setTypeLittoral(prevtypeLitto => {
+        if (newValue) {
+          return prevtypeLitto.includes("Estuaire")
+            ? prevtypeLitto
+            : [...prevtypeLitto, "Estuaire"];
+        } else {
+          return prevtypeLitto = prevtypeLitto.filter(val => val !== "Estuaire");;
+        }
+      });
+
+      return newValue;
+    });
+  };
+
+  function handleClickboutonTypeLittoral4() {
+    setboutonTypeLittoral4(prev => {
+      const newValue = !prev;
+
+      setTypeLittoral(prevtypeLitto => {
+        if (newValue) {
+          return prevtypeLitto.includes("Mer / Lac")
+            ? prevtypeLitto
+            : [...prevtypeLitto, "Mer / Lac"];
+        } else {
+          return prevtypeLitto = prevtypeLitto.filter(val => val !== "Mer / Lac");;
+        }
+      });
+
+      return newValue;
+    });
+  };
+
+  function handleClickboutonTypeLittoral5() {
+    setboutonTypeLittoral5(prev => {
+      const newValue = !prev;
+
+      setTypeLittoral(prevtypeLitto => {
+        if (newValue) {
+          return prevtypeLitto.includes("Mer / Estuaire")
+            ? prevtypeLitto
+            : [...prevtypeLitto, "Mer / Estuaire"];
+        } else {
+          return prevtypeLitto = prevtypeLitto.filter(val => val !== "Mer / Estuaire");;
+        }
+      });
+
+      return newValue;
+    });
+  };
+
   function handleClickboutonInnondation() {
     setboutonInondation(prev => {
       const newValue = !prev;
       setSelectedInondation(newValue); // ici on utilise directement la bonne valeur
-      console.log(newValue)
+      // console.log(newValue)
       return newValue;
     });
   }
@@ -446,7 +626,7 @@ function Carte() {
         alert('Un problème est survenu, veuillez réessayer plus tard');
       } else {
         let donnees = await requete.json();
-        console.log(donnees[0]);
+        // console.log(donnees[0]);
         setPositionData([donnees[0]["lat"], donnees[0]["lon"]])
         setAdresseInformation(donnees[0]["display_name"])
         const resultat = donnees[0]["display_name"].match(regex); // Cherche les correspondances
@@ -471,6 +651,10 @@ function Carte() {
       console.error(`Erreur lors de la requête pour : ${error.message}`);
     }
   }
+
+  const elementHtmlNiveauProbaInondation = <div><p> 1 : Forte Probabilité </p><p> 2 : Moyenne Probabilité</p><p> 3 : Moyenne Probabilité en prenant en compte le changement climatique</p><p> 4 : Faible Probabilité</p></div>;
+  const elementHtmlTypeInondation = <div><p> 1 : Débordement de cours d'eau </p><p> 2 : Ruissellement</p><p> 3 : Submersion marine</p><p> 4 : Débordement des nappes phréatiques</p></div>;
+  const elementHtmlTypeLittoral = <div><p> 1 : Mer </p><p> 2 : Non</p><p> 3 : Estuaire</p><p> 4 : Mer / Lac</p> <p> 5 : Mer / Estuaire </p></div>;
 
   return (
     <>
@@ -529,24 +713,50 @@ function Carte() {
 
           <span className='mt-2 text-xl underline font-principale-bold'> Inondations : </span>
           <span className='flex mt-2 text-xl font-principale justify-center'> Choix du Niveau de Probabilité
-            <InfoBulle /> :
+            <InfoBulle
+              elementhtml={elementHtmlNiveauProbaInondation}
+            /> :
           </span>
           <div id="niv-prob-inond-container" className="flex border-2 rounded-full items-center p-2 bg-[#ffde59] border-[#ffde59] mt-2">
-            <button onClick={handleClickboutonScenario1} className={`${boutonScenario1 == true ? 'bg-[#ffde59] text-[#fffade]' : 'bg-[#fffade]'} border-2 border-[#fffade] rounded-full w-13 h-13 text-3xl font-principale-bold hover:bg-[#ffde59] hover:text-white duration-300 mr-2 ml-2`} id="prob-For">1</button>
-            <button onClick={handleClickboutonScenario2} className={`${boutonScenario2 == true ? 'bg-[#ffde59] text-[#fffade]' : 'bg-[#fffade]'} border-2 border-[#fffade] rounded-full w-13 h-13 text-3xl font-principale-bold hover:bg-[#ffde59] hover:text-white duration-300 mr-2 ml-2`} id="prob-For">2</button>
-            <button onClick={handleClickboutonScenario3} className={`${boutonScenario3 == true ? 'bg-[#ffde59] text-[#fffade]' : 'bg-[#fffade]'} border-2 border-[#fffade] rounded-full w-13 h-13 text-3xl font-principale-bold hover:bg-[#ffde59] hover:text-white duration-300 mr-2 ml-2`} id="prob-For">3</button>
-            <button onClick={handleClickboutonScenario4} className={`${boutonScenario4 == true ? 'bg-[#ffde59] text-[#fffade]' : 'bg-[#fffade]'} border-2 border-[#fffade] rounded-full w-13 h-13 text-3xl font-principale-bold hover:bg-[#ffde59] hover:text-white duration-300 mr-2 ml-2`} id="prob-For">4</button>
+            <button onClick={handleClickboutonScenarioInondation1} className={`${boutonScenarioInondation1 == true ? 'bg-[#ffde59] text-[#fffade]' : 'bg-[#fffade]'} border-2 border-[#fffade] rounded-full w-13 h-13 text-3xl font-principale-bold hover:bg-[#ffde59] hover:text-white duration-300 mr-2 ml-2`} id="prob-For">1</button>
+            <button onClick={handleClickboutonScenarioInondation2} className={`${boutonScenarioInondation2 == true ? 'bg-[#ffde59] text-[#fffade]' : 'bg-[#fffade]'} border-2 border-[#fffade] rounded-full w-13 h-13 text-3xl font-principale-bold hover:bg-[#ffde59] hover:text-white duration-300 mr-2 ml-2`} id="prob-Moy">2</button>
+            <button onClick={handleClickboutonScenarioInondation3} className={`${boutonScenarioInondation3 == true ? 'bg-[#ffde59] text-[#fffade]' : 'bg-[#fffade]'} border-2 border-[#fffade] rounded-full w-13 h-13 text-3xl font-principale-bold hover:bg-[#ffde59] hover:text-white duration-300 mr-2 ml-2`} id="prob-Mcc">3</button>
+            <button onClick={handleClickboutonScenarioInondation4} className={`${boutonScenarioInondation4 == true ? 'bg-[#ffde59] text-[#fffade]' : 'bg-[#fffade]'} border-2 border-[#fffade] rounded-full w-13 h-13 text-3xl font-principale-bold hover:bg-[#ffde59] hover:text-white duration-300 mr-2 ml-2`} id="prob-Fai">4</button>
           </div>
-            <div className='flex items-center absolute bottom-0 p-4'>
-              <Link to="/carto-risque-clim/documentation">
+          <span className='flex mt-2 text-xl font-principale justify-center'> Choix du type d'inondation
+            <InfoBulle
+              elementhtml={elementHtmlTypeInondation}
+            /> :
+          </span>
+          <div id="niv-prob-inond-container" className="flex border-2 rounded-full items-center p-2 bg-[#ffde59] border-[#ffde59] mt-2">
+            <button onClick={handleClickboutonTypeInondation1} className={`${boutonTypeInondation1 == true ? 'bg-[#ffde59] text-[#fffade]' : 'bg-[#fffade]'} border-2 border-[#fffade] rounded-full w-13 h-13 text-3xl font-principale-bold hover:bg-[#ffde59] hover:text-white duration-300 mr-2 ml-2`}>1</button>
+            <button onClick={handleClickboutonTypeInondation2} className={`${boutonTypeInondation2 == true ? 'bg-[#ffde59] text-[#fffade]' : 'bg-[#fffade]'} border-2 border-[#fffade] rounded-full w-13 h-13 text-3xl font-principale-bold hover:bg-[#ffde59] hover:text-white duration-300 mr-2 ml-2`}>2</button>
+            <button onClick={handleClickboutonTypeInondation3} className={`${boutonTypeInondation3 == true ? 'bg-[#ffde59] text-[#fffade]' : 'bg-[#fffade]'} border-2 border-[#fffade] rounded-full w-13 h-13 text-3xl font-principale-bold hover:bg-[#ffde59] hover:text-white duration-300 mr-2 ml-2`}>3</button>
+            <button onClick={handleClickboutonTypeInondation4} className={`${boutonTypeInondation4 == true ? 'bg-[#ffde59] text-[#fffade]' : 'bg-[#fffade]'} border-2 border-[#fffade] rounded-full w-13 h-13 text-3xl font-principale-bold hover:bg-[#ffde59] hover:text-white duration-300 mr-2 ml-2`}>4</button>
+          </div>
+
+          <span className='mt-4 text-xl underline font-principale-bold'> Littoral : </span>
+          <span className='flex mt-2 text-xl font-principale justify-center'> Choix du type de données
+            <InfoBulle 
+            elementhtml={elementHtmlTypeLittoral}/> :
+          </span>
+          <div id="niv-prob-inond-container" className="flex border-2 rounded-full items-center p-2 bg-[#ffde59] border-[#ffde59] mt-2">
+            <button onClick={handleClickboutonTypeLittoral1} className={`${boutonTypeLittoral1 == true ? 'bg-[#ffde59] text-[#fffade]' : 'bg-[#fffade]'} border-2 border-[#fffade] rounded-full w-13 h-13 text-3xl font-principale-bold hover:bg-[#ffde59] hover:text-white duration-300 mr-2 ml-2`}>1</button>
+            <button onClick={handleClickboutonTypeLittoral2} className={`${boutonTypeLittoral2 == true ? 'bg-[#ffde59] text-[#fffade]' : 'bg-[#fffade]'} border-2 border-[#fffade] rounded-full w-13 h-13 text-3xl font-principale-bold hover:bg-[#ffde59] hover:text-white duration-300 mr-2 ml-2`}>2</button>
+            <button onClick={handleClickboutonTypeLittoral3} className={`${boutonTypeLittoral3 == true ? 'bg-[#ffde59] text-[#fffade]' : 'bg-[#fffade]'} border-2 border-[#fffade] rounded-full w-13 h-13 text-3xl font-principale-bold hover:bg-[#ffde59] hover:text-white duration-300 mr-2 ml-2`}>3</button>
+            <button onClick={handleClickboutonTypeLittoral4} className={`${boutonTypeLittoral4 == true ? 'bg-[#ffde59] text-[#fffade]' : 'bg-[#fffade]'} border-2 border-[#fffade] rounded-full w-13 h-13 text-3xl font-principale-bold hover:bg-[#ffde59] hover:text-white duration-300 mr-2 ml-2`}>4</button>
+            <button onClick={handleClickboutonTypeLittoral5} className={`${boutonTypeLittoral5 == true ? 'bg-[#ffde59] text-[#fffade]' : 'bg-[#fffade]'} border-2 border-[#fffade] rounded-full w-13 h-13 text-3xl font-principale-bold hover:bg-[#ffde59] hover:text-white duration-300 mr-2 ml-2`}>5</button>
+          </div>
+          <div className='flex items-center absolute bottom-0 p-4'>
+            <Link to="/carto-risque-clim/documentation">
               <button
                 // onClick={resetToRegions}
                 className="flex items-center space-x-6 border-2 border-[#c6b8ff] hover:bg-[#c6b8ff] text-black font-bold py-1 px-4 rounded-4xl duration-300">
                 <img src="/carto-risque-clim/media/images/retour.png" alt="Icône" className="w-8 h-8" />
                 <span className="font-principale text-xl">Documentation</span>
               </button>
-              </Link>
-            </div>
+            </Link>
+          </div>
         </div>
 
         <div className=" col-span-3 h-full w-full z-0">
@@ -622,7 +832,7 @@ function Carte() {
               <GeoJSON
                 data={littoralData}
                 style={{ color: 'navy' }}
-                onEachFeature={onEachZoneInondable}
+                onEachFeature={onEachZoneLittoral}
               />
             )}
 

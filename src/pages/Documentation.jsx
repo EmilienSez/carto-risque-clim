@@ -1,31 +1,42 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import paramsData from '../assets/data/params.json'
+import documentationData from '../assets/data/documentation.json'
 
 export default function Documentation() {
     const [docChoisi, setDocChoisi] = useState('Inondation');
-    const [titreDocumentation, setTitreDocumentation] = useState('');
+    const [titreDocumentation, setTitreDocumentation] = useState(Object.entries(documentationData.inondation));
+    console.log(titreDocumentation)
+    console.log(titreDocumentation[0][1])
 
     useEffect(() => {
-            console.log(docChoisi);
+        console.log(docChoisi);
     }, [docChoisi]);
 
+    console.log(documentationData.incendie)
 
     function choixInondation() {
         setDocChoisi('Inondation');
+        changeDocumentation('inondation');
     };
 
     function choixIncendie() {
         setDocChoisi('Incendie');
+        changeDocumentation('incendie');
     };
 
     function choixLittoral() {
         setDocChoisi('Littoral');
+        changeDocumentation('littoral');
     };
-    
+
     function choixCatastrophe() {
         setDocChoisi('Catastrophe');
+        changeDocumentation('catastrophe');
     };
+
+    function changeDocumentation(nameCol) {
+        setTitreDocumentation(Object.entries(documentationData[nameCol]));
+    }
 
     return (
         <div className="grid grid-cols-7 h-screen">
@@ -61,8 +72,20 @@ export default function Documentation() {
                     </div>
                 </button>
             </div>
-            <div className="flex flex-col items-center col-span-6 p-6">
-
+            <div className="flex flex-col col-span-6 p-6 mx-6">
+                <span className='text-4xl font-principale-bold underline'>{titreDocumentation[0][1]}</span>
+                <span className='text-lg font-principale my-3'>{titreDocumentation[1][1]}</span>
+                <span className='text-xl font-principale-bold my-3 underline'> Sommaire : </span>
+                <span className='text-lg font-principale my-6'> {titreDocumentation[2][1]} </span>
+                <span className='text-lg font-principale my-6'> {titreDocumentation[3][1]} </span>
+                <span className='text-xl font-principale-bold my-3 underline'> Source : </span>
+                <ul className="list-disc pl-4">
+                    {titreDocumentation[4][1].map((texte, index) => (
+                        <a href={texte}><li key={index} className="font-oswald-normal text-blue-400 underline text-md dark:text-white mb-1">
+                            {texte}
+                        </li></a>
+                    ))}
+                </ul>
             </div>
         </div>
     )

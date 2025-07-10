@@ -159,3 +159,7 @@
   height: 50px;
   border-radius: 50%;
 }
+
+.opacite-infobulle {
+  opacity:0.8;
+}
