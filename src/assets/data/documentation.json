@@ -3,7 +3,7 @@
         "titre": "Documentation - Inondation",
         "introduction": "Ce jeu de données est fournies par le site Géorisques et se concentre sur les Territoires à Risques important d'Inondation (TRI) - version 2 (millésime 2020). Les données ont été élaborées selon le standard Directive Inondation v2 :  il s'agit principalement d'une mise à jour des données de rapportage 2013. Concernant les données il s'agit d'une carte des surfaces inondables selon 4 scénario établie par les personnes en charge de l'étude. Les scénarios sont les suivants : Forte probabilité, Moyenne probabilité, Moyenne probabilité en prenant en compte le changement climatique, Faible probabilité. De plus, il y a différent type d'inondation : Débordement de cours d'eau, ruissellement, Submersion marine, débordement des nappes phréatiques",
         "sommaire": "",
-        "description": "",
+        "description": "inondation",
         "source": [
             "https://www.georisques.gouv.fr/donnees/bases-de-donnees/zonages-inondation-rapportage-2020",
             "https://files.georisques.fr/di_2020/COVADIS_standard_DI_v2.1.pdf"
